@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { db } from './components/firebase';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, getDocs, doc } from 'firebase/firestore';
 import { nanoid, customAlphabet } from 'nanoid';
 import pc from './components/webrtc';
 import styled from 'styled-components';
 
 function App() {
-  console.log(pc);
+  // console.log(pc);
   const videoRef = useRef();
   const id = nanoid();
   const roomIdCustom = customAlphabet('abcde0123456789', 6);
@@ -19,6 +19,7 @@ function App() {
     audio,
     id,
     roomId,
+    nickName: 'tory',
   };
   const videoState = collection(db, 'video');
 
@@ -29,6 +30,12 @@ function App() {
     } catch (e) {
       console.log(e);
     }
+  };
+  const getData = async () => {
+    const data = await getDocs(videoState);
+    data.forEach((res) => {
+      console.log(res.data());
+    });
   };
 
   const viewCamera = async () => {
@@ -48,9 +55,10 @@ function App() {
       console.log(videoRef.current);
     }
   };
-  console.log(video);
+  // console.log(video);
   useEffect(() => {
     viewCamera();
+    getData();
   }, [video]);
 
   return (
