@@ -32,11 +32,15 @@ function App() {
   };
 
   const viewCamera = async () => {
-    const stream =
-      video === true
-        ? await navigator.mediaDevices.getUserMedia(mediaState)
-        : null;
-    videoRef.current.srcObject = stream;
+    try {
+      const stream =
+        video === true
+          ? await navigator.mediaDevices.getUserMedia(mediaState)
+          : null;
+      videoRef.current.srcObject = stream;
+    } catch (e) {
+      console.error('Error accessing media devices.', e);
+    }
   };
   const videoHandler = () => {
     setVideo(!video);
