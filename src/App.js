@@ -1,19 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { db } from './components/firebase';
+import { db, database } from './components/firebase';
 import { addDoc, collection, getDocs, doc } from 'firebase/firestore';
+import { push, ref } from 'firebase/database';
 import { nanoid, customAlphabet } from 'nanoid';
 import pc from './components/webrtc';
+
 import styled from 'styled-components';
 
 function App() {
   // console.log(pc);
-  const videoRef = useRef();
+  const creatorVideoRef = useRef();
+  const joinVideoRef = useRef();
   const id = nanoid();
   const roomIdCustom = customAlphabet('abcde0123456789', 6);
   const roomId = roomIdCustom();
   const [video, setVideo] = useState(true);
   const [audio, setAudio] = useState(false);
-
   const mediaState = {
     video,
     audio,
@@ -21,6 +23,8 @@ function App() {
     roomId,
     nickName: 'tory',
   };
+
+  //파이어베이스 ------------store
   const videoState = collection(db, 'video');
 
   const addData = async () => {
@@ -31,12 +35,23 @@ function App() {
       console.log(e);
     }
   };
-  const getData = async () => {
-    const data = await getDocs(videoState);
-    data.forEach((res) => {
-      console.log(res.data());
-    });
-  };
+  // const getData = async () => {
+  //   const data = await getDocs(videoState);
+  //   data.forEach((res) => {
+  //     console.log(res.data().nickName);
+  //   });
+  // };
+  //파이어베이스 실시간
+  const locate = ref(database, '0gunKimTest');
+
+  async function makeCall() {
+    const offer = await pc.createOffer();
+    console.log(offer);
+    await pc.setLocalDescription(offer);
+    push(locate, { offer });
+  }
+
+  let localStream = null;
 
   const viewCamera = async () => {
     try {
@@ -44,7 +59,18 @@ function App() {
         video === true
           ? await navigator.mediaDevices.getUserMedia(mediaState)
           : null;
-      videoRef.current.srcObject = stream;
+      creatorVideoRef.current.srcObject = stream;
+    } catch (e) {
+      console.error('Error accessing media devices.', e);
+    }
+  };
+  const joinCamera = async () => {
+    try {
+      const stream =
+        video === true
+          ? await navigator.mediaDevices.getUserMedia(mediaState)
+          : null;
+      joinVideoRef.current.srcObject = stream;
     } catch (e) {
       console.error('Error accessing media devices.', e);
     }
@@ -52,26 +78,38 @@ function App() {
   const videoHandler = () => {
     setVideo(!video);
     if (video === false) {
-      console.log(videoRef.current);
     }
   };
   // console.log(video);
   useEffect(() => {
     viewCamera();
-    getData();
+    joinCamera();
+    // getData();
   }, [video]);
 
   return (
     <div className='App'>
-      <StVideo
+      creatorVideo
+      <StCreatorVideo
         autoPlay
-        ref={videoRef}></StVideo>
-      <button onClick={addData}>버튼</button>
+        playsInline
+        ref={creatorVideoRef}></StCreatorVideo>
+      <button onClick={makeCall}>offer</button>
       <button onClick={videoHandler}>video on/off</button>
+      <StJoinVideo
+        autoPlay
+        playsInline
+        ref={joinVideoRef}></StJoinVideo>
+      joinVideo
     </div>
   );
 }
-const StVideo = styled.video`
+const StCreatorVideo = styled.video`
+  background-color: orange;
+  height: 200px;
+  width: 300px;
+`;
+const StJoinVideo = styled.video`
   background-color: orange;
   height: 200px;
   width: 300px;
