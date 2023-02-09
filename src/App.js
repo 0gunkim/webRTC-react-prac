@@ -1,40 +1,43 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { db, database } from './components/firebase';
 import { addDoc, collection, getDocs, doc } from 'firebase/firestore';
-import { push, ref } from 'firebase/database';
+import { push, ref, getDatabase, onValue } from 'firebase/database';
 import { nanoid, customAlphabet } from 'nanoid';
 import pc from './components/webrtc';
 
+import './App.css';
 import styled from 'styled-components';
 
 function App() {
   // console.log(pc);
+  const [stream, setStream] = useState();
+  const [devices, setDevices] = useState();
+  const [videoOff, setvideoOff] = useState();
   const creatorVideoRef = useRef();
   const joinVideoRef = useRef();
-  const id = nanoid();
-  const roomIdCustom = customAlphabet('abcde0123456789', 6);
-  const roomId = roomIdCustom();
-  const [video, setVideo] = useState(true);
-  const [audio, setAudio] = useState(false);
+
+  const initVideo = {
+    audio: false,
+    video: { facingMode: { exact: 'environment' } },
+  };
   const mediaState = {
-    video,
-    audio,
-    id,
-    roomId,
+    audio: false,
+    video: { facingMode: 'user' },
     nickName: 'tory',
   };
 
   //파이어베이스 ------------store
   const videoState = collection(db, 'video');
 
-  const addData = async () => {
-    try {
-      const res = await addDoc(videoState, mediaState);
-      console.log(res);
-    } catch (e) {
-      console.log(e);
-    }
-  };
+  // const addData = async () => {
+  //   try {
+  //     const res = await addDoc(videoState, mediaState);
+  //     console.log(res);
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // };
+
   // const getData = async () => {
   //   const data = await getDocs(videoState);
   //   data.forEach((res) => {
@@ -42,50 +45,56 @@ function App() {
   //   });
   // };
   //파이어베이스 실시간
-  const locate = ref(database, '0gunKimTest');
-
+  const addLocate = ref(database, 'offer');
   async function makeCall() {
     const offer = await pc.createOffer();
-    console.log(offer);
     await pc.setLocalDescription(offer);
-    push(locate, { offer });
+    const offerData = {
+      spd: offer.sdp,
+      type: offer.type,
+    };
+    push(addLocate, offerData);
   }
+  // const getData = getDatabase();
+  // const getLocate = ref(getData, '0gunKimTest');
+  // const getSdp = () => {
+  //   onValue(getLocate, (data) => {
+  //     const obj = data.val();
+  //     console.log(Object.values(obj));
+  //   });
+  // };
 
-  let localStream = null;
-
-  const viewCamera = async () => {
+  // 디바이스 가져오기
+  // const getVideo = async () => {
+  //   try {
+  //     const devices = await navigator.mediaDevices.enumerateDevices();
+  //     const cameras = devices.filter((device) => device.kind === 'videoinput');
+  //     cameras.forEach((deviceId) => setDevices(deviceId.deviceId));
+  //   } catch (e) {
+  //     console.error('비디오를 가져오지 못했습니다');
+  //   }
+  // };
+  const localStream = async () => {
     try {
-      const stream =
-        video === true
-          ? await navigator.mediaDevices.getUserMedia(mediaState)
-          : null;
+      const stream = await navigator.mediaDevices.getUserMedia(mediaState);
+      setStream(stream);
       creatorVideoRef.current.srcObject = stream;
     } catch (e) {
       console.error('Error accessing media devices.', e);
     }
   };
-  const joinCamera = async () => {
-    try {
-      const stream =
-        video === true
-          ? await navigator.mediaDevices.getUserMedia(mediaState)
-          : null;
-      joinVideoRef.current.srcObject = stream;
-    } catch (e) {
-      console.error('Error accessing media devices.', e);
-    }
+
+  const offVideo = async () => {
+    await stream
+      .getVideoTracks()
+      .forEach((enabled) => setvideoOff((enabled.enabled = !enabled.enabled)));
   };
-  const videoHandler = () => {
-    setVideo(!video);
-    if (video === false) {
-    }
-  };
-  // console.log(video);
+
   useEffect(() => {
-    viewCamera();
-    joinCamera();
-    // getData();
-  }, [video]);
+    // getVideo();
+    localStream();
+    // getSdp();
+  }, []);
 
   return (
     <div className='App'>
@@ -94,8 +103,9 @@ function App() {
         autoPlay
         playsInline
         ref={creatorVideoRef}></StCreatorVideo>
+      <button onClick={offVideo}>{videoOff ? 'off' : 'on'}</button>
       <button onClick={makeCall}>offer</button>
-      <button onClick={videoHandler}>video on/off</button>
+      {/* <button onClick={getSdp}>answer</button> */}
       <StJoinVideo
         autoPlay
         playsInline
