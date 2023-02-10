@@ -1,0 +1,13 @@
+.App {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+.localStream {
+  /* width: 300px;
+  height: 300px; */
+  background-color: olivedrab;
+}

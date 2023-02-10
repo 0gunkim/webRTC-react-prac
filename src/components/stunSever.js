@@ -1,4 +1,3 @@
-// server config
 const servers = {
   iceServers: [
     {
