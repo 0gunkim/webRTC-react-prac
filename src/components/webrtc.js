@@ -1,5 +1,5 @@
 import servers from './stunSever';
 
-const pc = new RTCPeerConnection(servers);
+const pc = new RTCPeerConnection();
 
 export default pc;
