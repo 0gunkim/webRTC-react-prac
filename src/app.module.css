@@ -8,10 +8,28 @@
   align-items: center;
 }
 .roomNameBox {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
   margin-bottom: 100px;
+  width: 300px;
 }
 .roomNameInput {
-  margin-left: 20px;
+  width: 200px;
+}
+.roomNameBox > button {
+  background-color: rgb(88, 88, 182);
+  border-radius: 10px;
+  border: none;
+  width: 90px;
+  height: 30px;
+  margin-top: 20px;
+  cursor: pointer;
+}
+.button:hover {
+  background-color: brown;
 }
 .localStream {
 }
