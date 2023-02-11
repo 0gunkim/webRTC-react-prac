@@ -9,6 +9,8 @@ export default function Aspp() {
   const localStreamRef = useRef();
   const [creatorUser, setCreatorUser] = useState();
   const constraints = { audio: false, video: { width: 380, height: 380 } };
+  //yourStreamRef
+  const yourStreamRef = useRef();
 
   //On & off(camera / audio)
   const [cameraOn, setCameraOn] = useState(true);
@@ -21,16 +23,15 @@ export default function Aspp() {
   //main && join
   const [openVideo, setOpenVideo] = useState(false);
 
-  const locate = ref(database, `join`);
-  const offerLocate = ref(database, 'offer');
+  //realTime data
+  const getRealTimaData = getDatabase();
 
   const localStream = async () => {
     try {
-      if (openVideo) {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        localStreamRef.current.srcObject = stream;
-        setCreatorUser(stream);
-      }
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      localStreamRef.current.srcObject = stream;
+      yourStreamRef.current.srcObject = stream;
+      setCreatorUser(stream);
     } catch (error) {
       console.error('no connact localStream');
     }
@@ -54,32 +55,70 @@ export default function Aspp() {
 
   const roomJoinSubmit = (e) => {
     e.preventDefault();
+
     const inputValue = roomNameRef.current.value;
     setRoomName(inputValue);
     roomNameRef.current.value = '';
-    setOpenVideo(!openVideo);
-    console.log(roomName);
+    setOpenVideo(true);
+    localStream();
     offerHandler(inputValue);
   };
 
-  const offerHandler = async (inputValue) => {
+  const locate = ref(database, `join`);
+  // 오퍼가 있는지 없는지 확인 있다면 리모트 오퍼
+  const offerHandler = async (inputValue, answer) => {
+    const offerLocate = ref(database, `offer/${roomName}`);
+    const getAnswerLocate = ref(database, `offer/${roomName}`);
+    //offer 시그널서버로 전달
+
+    onValue(getJoin, async (snapshot) => {
+      const data = snapshot.val();
+      console.log(data);
+      const realFindRoom = Object.values(data);
+      console.log(realFindRoom);
+      if (answer) {
+        const remoteAnswerDesc = new RTCSessionDescription(answer);
+        await pc.setRemoteDescription(remoteAnswerDesc);
+      }
+    });
     const offer = await pc.createOffer();
     const jsonOffer = JSON.stringify(offer);
     push(offerLocate, jsonOffer);
-    push(locate, { roomName: inputValue });
+    push(locate, {
+      roomName: inputValue,
+      message: '누군가 왔다',
+      isJoin: true,
+    });
   };
+  // offer remote
+  const getOffer = ref(getRealTimaData, 'offer');
+  const remoteOffer = async () => {
+    onValue(getOffer, async (snapshot) => {
+      const fireGetOffer = Object.values(snapshot.val());
+      const remoteSessionOffer = new RTCSessionDescription(fireGetOffer);
+      await pc.setRemoteDescription(remoteSessionOffer);
+      console.log(remoteSessionOffer);
+    });
+  };
+  //isOffer ?
 
   // 참가자가 들어왔음 알리는 메세지
-  const welcomMessage = getDatabase();
-  const getJoin = ref(welcomMessage, `join`);
-  onValue(getJoin, (data) => {
-    const realFindRoom = Object.values(data.val());
+  const getJoin = ref(getRealTimaData, 'join');
+
+  onValue(getJoin, (snapshot) => {
+    const data = snapshot.val();
+    console.log(data);
+    const realFindRoom = Object.values(data);
+    console.log(realFindRoom);
+
     const rd = realFindRoom.filter((i) => i.roomName === roomName);
-    rd.length === 2 && console.log('누군과 왔다.');
+    if (rd.length > 1) {
+      rd.find((i) => console.log(i.message));
+    } else if (rd.length === 1) {
+      console.log('방생성');
+    }
   });
-  useEffect(() => {
-    openVideo && localStream();
-  }, [openVideo]);
+
   return (
     <div className={styles.App}>
       {!openVideo ? (
@@ -94,7 +133,7 @@ export default function Aspp() {
               type='text'
               ref={roomNameRef}
             />
-            <button type='button'>JOIN</button>
+            <button>JOIN</button>
           </div>
         </form>
       ) : (
@@ -102,6 +141,17 @@ export default function Aspp() {
           <video
             className={styles.localStream}
             ref={localStreamRef}
+            autoPlay
+            playsInline></video>
+          <button onClick={videoSwitch}>
+            {cameraOn ? 'CAMERA OFF' : 'CAMERA ON'}
+          </button>
+          <button onClick={audioSwitch}>
+            {audioOn ? 'AUDIO OFF' : 'AUDIO ON'}
+          </button>
+          <video
+            className={styles.localStream}
+            ref={yourStreamRef}
             autoPlay
             playsInline></video>
           <button onClick={videoSwitch}>
