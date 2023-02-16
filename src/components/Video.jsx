@@ -2,14 +2,7 @@ import React from 'react';
 import { useRef } from 'react';
 import styles from './Video.module.css';
 import pc from './webrtc';
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-} from 'firebase/firestore';
+import { addDoc, collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { query } from 'firebase/database';
 export default function Video(props) {
@@ -19,7 +12,7 @@ export default function Video(props) {
   //Video init
   const constraints = {
     video: { width: 380, height: 220 },
-    audio: false,
+    audio: true,
   };
   //Connact Video
 
@@ -70,7 +63,6 @@ export default function Video(props) {
           });
           const findAnswer = data.find((i) => i.type === 'answer');
 
-          // console.log(pc.currentRemoteDescription);
           if (findAnswer) {
             const answer = {
               sdp: findAnswer.sdp,

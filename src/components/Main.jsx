@@ -26,6 +26,17 @@ export default function Main(props) {
         onClick={createRoomHandler}>
         CREATE
       </button>
+      <table>
+        <tr>
+          <td>dsf</td>
+          <td>dsf</td>
+        </tr>
+        <tr>
+          <td>dsf</td>
+          <td>dsf</td>
+        </tr>
+        <tr>dsf</tr>
+      </table>
       <input
         type='text'
         ref={joinValueRef}
